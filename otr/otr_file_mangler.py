@@ -65,7 +65,7 @@ def find_files(start_dir):
                 continue
 
             if os.path.isfile(vid_file_path):
-                target_files.add(vid_file_path)
+                target_files.add(fn)
                 processed_files_file.writelines([vid_file_path, '\n'])
                 processed_files_file.flush()
 
