@@ -5,9 +5,17 @@ Created on 08.01.2014
 @author: defiler
 '''
 
-SOURCE_PATH = '/share/Ftp'
 
+# Do not process files if they are opened by a process belonging to these users.
+FILE_USERS = ['proftpd',]
+
+# directory which is scanned for incoming data
+SOURCE_PATH = '/share/Ftp'
+# base path of movie and series collection
 TARGET_BASE_PATH = '/share/Videos'
+# file for keeping track of already processed files
+PROCESSED_FILES = '/opt/ftp/otr_processed_files'
+
 
 CATEGORIES = ['filme', 'series', 'doku', 'misc',]
 SUB_CATEGORIES = {
@@ -36,8 +44,10 @@ SUB_CATEGORIES = {
                     ('IjonTichy',),
                     ('Irgendwie und Sowieso',),
                     ('Law and Order', 'Law und Order', 'Law Order',),
+                    ('Lilyhammer',),
                     ('Mord mit Aussicht',),
                     ('Navy CIS', 'NCIS',),
+                    ('Orphan Black',),
                     ('Revenge',),
                     ('Robot Chicken',),
                     ('Sex and the City',),

@@ -10,42 +10,62 @@ Created on 08.01.2014
 @author: defiler
 '''
 
-
-import os
-import re
-import time
+import os, re, time, pwd, psutil
 from settings import *
+
+def get_open_files():
+    """
+    Obtain a list of files that are currently opened by
+    a specific list of users.
+    See FILE_USERS for the list of users to take into regard.
+    """
+
+    open_files = []
+    for proc in psutil.process_iter():
+        e_username = pwd.getpwuid(proc.uids()[1]).pw_name
+        if e_username in FILE_USERS:
+            proc_files = [of[0] for of in proc.open_files()]
+            if proc.children():
+                for child in proc.children():
+                    proc_files.extend([of[0] for of in child.open_files()])
+            open_files.extend(proc_files)
+
+    return open_files
+
 
 def find_files(start_dir):
     """
+    find_files(dir) -> set(files)
     Obtain files from the given directory.
-    Only files with a specified @minimum_age are included
+    Files listed in a tracking file (PROCESSED_FILES) will be ignored
     in order to avoid interference with files currently being downloaded.
     """
 
-    minimum_age = 60 * 3 # seconds
     target_files = set()
+
+    if os.path.exists(PROCESSED_FILES):
+        processed_files_file = open(PROCESSED_FILES, 'a+')
+        processed_files = processed_files_file.readlines()
+
+    exclude_files = processed_files
+    open_files = get_open_files()
+    exclude_files.extend(open_files)
+    exclude_files = set(exclude_files)
 
     for r, d, files in os.walk(start_dir):
         del r, d # our FTP incoming dir has no sub-hierarchy
         files.sort()
         for fn in files:
-            try:
-                vid_file_path = os.path.join(start_dir, fn)
-                vid_file = open(vid_file_path)
-                if vid_file:
-                    print time.ctime(), "Trying file ", vid_file_path
-                    mtime = os.fstat(vid_file.fileno()).st_mtime
-                    file_modify_age_s = time.time() - mtime
-                    vid_file.close()
-                    if file_modify_age_s > minimum_age:
-                        target_files.add(fn)
-                        print time.ctime(), "Moving file, age is okay (", file_modify_age_s, "s)"
-                    else:
-                        print time.ctime(), "Not moving file, too young(", file_modify_age_s, "s)"
-            except Exception as e:
-                pass
+            vid_file_path = os.path.join(start_dir, fn)
+            if vid_file_path in processed_files:
+                continue
 
+            if os.path.isfile(vid_file_path):
+                target_files.add(vid_file_path)
+                processed_files_file.writelines([vid_file_path, '\n'])
+                processed_files_file.flush()
+
+    processed_files_file.close()
     return target_files
 
 def adapt_name(orig, keep_date=False):
@@ -188,6 +208,8 @@ def re_arrange_files(start_dir):
     Comprehensive collection and re-arrangement function.
     """
     orig_file_names = find_files(start_dir)
+
+
     orig_series_names = find_series(orig_file_names)
 
     series_files = []
