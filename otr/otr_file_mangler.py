@@ -46,6 +46,10 @@ def find_files(start_dir):
     if os.path.exists(PROCESSED_FILES):
         processed_files_file = open(PROCESSED_FILES, 'a+')
         processed_files = processed_files_file.readlines()
+        processed_files.insert(0, PROCESSED_FILES)
+    else:
+        processed_files = [PROCESSED_FILES]
+        processed_files_file = open(PROCESSED_FILES, 'a+')
 
     exclude_files = processed_files
     open_files = get_open_files()
