@@ -50,12 +50,12 @@ def find_files(start_dir):
     else:
         processed_files_file = open(PROCESSED_FILES, 'a+')
 
+    # trim linebreaks
+    processed_files = [f[:-1] for f in processed_files]
     exclude_files = processed_files
     open_files = get_open_files()
     exclude_files.extend(open_files)
 
-    # trim linebreaks
-    exclude_files = [f[:-1] for f in exclude_files]
     exclude_files.insert(0, PROCESSED_FILES)
     exclude_files = set(exclude_files)
 
@@ -65,6 +65,7 @@ def find_files(start_dir):
         for fn in files:
             vid_file_path = os.path.join(start_dir, fn)
             if vid_file_path in processed_files:
+                print "File is excluded: ", vid_file_path
                 continue
 
             if os.path.isfile(vid_file_path):

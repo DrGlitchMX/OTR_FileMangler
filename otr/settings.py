@@ -10,9 +10,9 @@ Created on 08.01.2014
 FILE_USERS = ['proftpd',]
 
 # directory which is scanned for incoming data
-SOURCE_PATH = '/share/Ftp'
+SOURCE_PATH = '/opt/ftp'
 # base path of movie and series collection
-TARGET_BASE_PATH = '/share/Videos'
+TARGET_BASE_PATH = '/mnt/nasgul.castle/Videos'
 # file for keeping track of already processed files
 PROCESSED_FILES = '/opt/ftp/otr_processed_files'
 
