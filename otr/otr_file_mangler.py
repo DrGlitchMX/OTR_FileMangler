@@ -10,7 +10,7 @@ Created on 08.01.2014
 @author: defiler
 '''
 
-import os, re, time, pwd, psutil
+import os, re, time, pwd, psutil, shutil
 from settings import *
 
 def get_open_files():
@@ -43,17 +43,20 @@ def find_files(start_dir):
 
     target_files = set()
 
+    processed_files = []
     if os.path.exists(PROCESSED_FILES):
         processed_files_file = open(PROCESSED_FILES, 'a+')
         processed_files = processed_files_file.readlines()
-        processed_files.insert(0, PROCESSED_FILES)
     else:
-        processed_files = [PROCESSED_FILES]
         processed_files_file = open(PROCESSED_FILES, 'a+')
 
     exclude_files = processed_files
     open_files = get_open_files()
     exclude_files.extend(open_files)
+
+    # trim linebreaks
+    exclude_files = [f[:-1] for f in exclude_files]
+    exclude_files.insert(0, PROCESSED_FILES)
     exclude_files = set(exclude_files)
 
     for r, d, files in os.walk(start_dir):
@@ -145,8 +148,8 @@ def move_file(orig_path, new_path):
 
     new_path = next_filename_num(new_path)
 
-    print time.ctime(), "Moving: '{0}'\n    to '{1}'".format(orig_path, new_path)
-    os.rename(orig_path, new_path)
+    print time.ctime(), "Copying: '{0}'\n    to '{1}'".format(orig_path, new_path)
+    shutil.copy2(orig_path, new_path)
 
 def arrange_series(dict_series_names):
     total_num_series = len([i for i in dict_series_names.values() if len(i) > 0])
