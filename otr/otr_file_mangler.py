@@ -65,7 +65,6 @@ def find_files(start_dir):
         for fn in files:
             vid_file_path = os.path.join(start_dir, fn)
             if vid_file_path in processed_files:
-                print "File is excluded: ", vid_file_path
                 continue
 
             if os.path.isfile(vid_file_path):
