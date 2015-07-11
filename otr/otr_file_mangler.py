@@ -43,17 +43,20 @@ def find_files(start_dir):
 
     target_files = set()
 
+    processed_files = []
     if os.path.exists(PROCESSED_FILES):
         processed_files_file = open(PROCESSED_FILES, 'a+')
         processed_files = processed_files_file.readlines()
-        processed_files.insert(0, PROCESSED_FILES)
     else:
-        processed_files = [PROCESSED_FILES]
         processed_files_file = open(PROCESSED_FILES, 'a+')
 
     exclude_files = processed_files
     open_files = get_open_files()
     exclude_files.extend(open_files)
+
+    # trim linebreaks
+    exclude_files = [f[:-1] for f in exclude_files]
+    exclude_files.insert(0, PROCESSED_FILES)
     exclude_files = set(exclude_files)
 
     for r, d, files in os.walk(start_dir):
