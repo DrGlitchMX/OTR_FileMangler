@@ -11,8 +11,8 @@ Created on 2014-01-08
 """
 
 import os, re, time, pwd, psutil, shutil
-#from settings import *
 import settings
+
 
 def get_open_files():
     """
@@ -47,7 +47,7 @@ def find_files(start_dir):
 
     target_files = set()
 
-    processed_files = []
+    processed_files = list()
     if os.path.exists(settings.PROCESSED_FILES):
         processed_files_file = open(settings.PROCESSED_FILES, 'a+')
         processed_files = processed_files_file.readlines()
@@ -64,7 +64,7 @@ def find_files(start_dir):
     exclude_files = set(exclude_files)
 
     for r, d, files in os.walk(start_dir):
-        del r, d # our FTP incoming dir has no sub-hierarchy
+        del r, d
         files.sort()
         for fn in files:
             vid_file_path = os.path.join(start_dir, fn)
