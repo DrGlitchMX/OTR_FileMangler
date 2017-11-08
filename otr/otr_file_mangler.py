@@ -240,5 +240,5 @@ def re_arrange_files(start_dir):
 
 
 if __name__ == '__main__':
-    re_arrange_files(SOURCE_PATH)
+    re_arrange_files(settings.SOURCE_PATH)
 
