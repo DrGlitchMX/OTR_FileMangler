@@ -11,3 +11,9 @@ and is not suitable for sorting, for example).
 
 This tiny script wants to help the effort. Its purpose is to copy files from an **incoming** folder to
 either the correct subfolder in a "series" folder, or to a more generic "movies" folder.
+
+# LICENSE NOTE
+I am deeply sorry, but I initially forgot to put this software under
+an explicit license. My bad!
+This is now fixed, this code is licensed under **GPLv3**.
+
