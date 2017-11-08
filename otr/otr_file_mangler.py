@@ -1,29 +1,33 @@
 # coding=utf-8
 #!/usr/bin/env python
-'''
+"""
 Fetch files in FTP incoming directory, rename them properly
 and move them to appropriate positions for easier pickup by
 DLNA servers, e.g.
 
-Created on 08.01.2014
+Created on 2014-01-08
 
 @author: defiler
-'''
+"""
 
 import os, re, time, pwd, psutil, shutil
-from settings import *
+import settings
+
 
 def get_open_files():
     """
     Obtain a list of files that are currently opened by
     a specific list of users.
-    See FILE_USERS for the list of users to take into regard.
+    See settings.FILE_USERS for the list of users to take into account.
+
+    This helps preventing using files that are currently in use
+    by another person or process.
     """
 
-    open_files = []
+    open_files = list()
     for proc in psutil.process_iter():
         e_username = pwd.getpwuid(proc.uids()[1]).pw_name
-        if e_username in FILE_USERS:
+        if e_username in settings.FILE_USERS:
             proc_files = [of[0] for of in proc.open_files()]
             if proc.children():
                 for child in proc.children():
@@ -43,12 +47,12 @@ def find_files(start_dir):
 
     target_files = set()
 
-    processed_files = []
-    if os.path.exists(PROCESSED_FILES):
-        processed_files_file = open(PROCESSED_FILES, 'a+')
+    processed_files = list()
+    if os.path.exists(settings.PROCESSED_FILES):
+        processed_files_file = open(settings.PROCESSED_FILES, 'a+')
         processed_files = processed_files_file.readlines()
     else:
-        processed_files_file = open(PROCESSED_FILES, 'a+')
+        processed_files_file = open(settings.PROCESSED_FILES, 'a+')
 
     # trim linebreaks
     processed_files = [f[:-1] for f in processed_files]
@@ -56,11 +60,11 @@ def find_files(start_dir):
     open_files = get_open_files()
     exclude_files.extend(open_files)
 
-    exclude_files.insert(0, PROCESSED_FILES)
+    exclude_files.insert(0, settings.PROCESSED_FILES)
     exclude_files = set(exclude_files)
 
     for r, d, files in os.walk(start_dir):
-        del r, d # our FTP incoming dir has no sub-hierarchy
+        del r, d
         files.sort()
         for fn in files:
             vid_file_path = os.path.join(start_dir, fn)
@@ -78,7 +82,7 @@ def find_files(start_dir):
 def adapt_name(orig, keep_date=False):
     """
     Perform basic filtering on the crude file names assigned by OTR.
-    Station name etc are stripped, date and time are retained.
+    Station name etc are stripped, date and time are retained if desired.
     """
     pattern = re.compile(r'^(?:[0-9]+_)?(?P<title>[\w-]+)_'
         + r'(?P<season_episode>S\|s][0-9]+E\|s[0-9]+_)?'
@@ -108,11 +112,11 @@ def adapt_name(orig, keep_date=False):
 
 
 def move_file(orig_path, new_path):
-    fOrig = open(orig_path, 'r')
-    if fOrig is None:
+    orig_file = open(orig_path, 'r')
+    if orig_file is None:
         print time.ctime(), "Cannot move original file!"
         return
-    fOrig.close()
+    orig_file.close()
 
 
     def next_filename_num(base_path, num=None):
@@ -132,24 +136,24 @@ def move_file(orig_path, new_path):
                 return base_path
             if f:
                 f.close()
-                pStr = r'(?P<extension>\.\w{3,4})(\.(?P<dup_num>\d+))?$'
-                pat = re.compile(r'.*' + pStr)
+                pattern_dupe = r'(?P<extension>\.\w{3,4})(\.(?P<dup_num>\d+))?$'
+                pat = re.compile(r'.*' + pattern_dupe)
                 match = pat.match(base_path)
                 if match:
                     extension = match.group('extension')
                     dup_num = int(match.group('dup_num') or num)
                     dup_num += 1
-                    base_path = re.sub(pStr,
-                                      extension + '.' + str(dup_num),
-                                      base_path)
+                    base_path = re.sub(pattern_dupe,
+                                       extension + '.' + str(dup_num),
+                                       base_path)
                     return next_filename_num(base_path, dup_num)
-                else:
-                    return next_filename_num(base_path)
+                return next_filename_num(base_path)
 
     new_path = next_filename_num(new_path)
 
     print time.ctime(), "Copying: '{0}'\n    to '{1}'".format(orig_path, new_path)
     shutil.copy2(orig_path, new_path)
+
 
 def arrange_series(dict_series_names):
     total_num_series = len([i for i in dict_series_names.values() if len(i) > 0])
@@ -159,9 +163,9 @@ def arrange_series(dict_series_names):
     for series, episodes in dict_series_names.items():
         for e in episodes:
             try:
-                orig_path = os.path.join(SOURCE_PATH, e)
-                
-                new_path = os.path.join(TARGET_BASE_PATH, 'series',
+                orig_path = os.path.join(settings.SOURCE_PATH, e)
+                new_path = os.path.join(settings.TARGET_BASE_PATH,
+                                        settings.SERIES_SUBDIR,
                                         series, adapt_name(e, True))
                 move_file(orig_path, new_path)
             except Exception as ex:
@@ -172,33 +176,36 @@ def arrange_series(dict_series_names):
     if total_num_series > 0:
         print time.ctime(), '\n########'
 
+
 def arrange_movies(raw_names):
-    if len(raw_names) > 0:
+    if len(raw_names):
         print time.ctime(), '\n########'
         print time.ctime(), "Arranging movies:"
     for m in raw_names:
         try:
-            orig_path = os.path.join(SOURCE_PATH, m)
-            new_path = os.path.join(TARGET_BASE_PATH, 'filme', adapt_name(m, False))
+            orig_path = os.path.join(settings.SOURCE_PATH, m)
+            new_path = os.path.join(settings.TARGET_BASE_PATH,
+                                    settings.MOVIES_SUBDIR,
+                                    adapt_name(m, False))
             move_file(orig_path, new_path)
         except Exception as e:
             print time.ctime(), e
         finally:
-            print time.ctime(), 'filme:', m
+            print time.ctime(), 'Movies:', m
 
-    if len(raw_names) > 0:
+    if len(raw_names):
         print time.ctime(), '\n########'
+
 
 def find_series(orig_names):
     """
     Check for files matching a series that already has a proper
     sub-directory.
     If so, they are added to a dictionary of "series" : [ list of files ]
-    for further processing
+    for further processing.
     """
-    series = SUB_CATEGORIES['series']
-
-    series_episodes = {s[0] : [] for s in series}
+    series = settings.CATEGORIES[settings.SERIES_SUBDIR]
+    series_episodes = {s[0] : list() for s in series}
 
     for orig in orig_names:
         for ser in series:
@@ -215,17 +222,15 @@ def re_arrange_files(start_dir):
     Comprehensive collection and re-arrangement function.
     """
     orig_file_names = find_files(start_dir)
-
-
     orig_series_names = find_series(orig_file_names)
 
-    series_files = []
+    series_files = list()
     for e in orig_series_names.values():
         if len(e) > 0:
             for f in e:
                 series_files.append(f)
 
-    orig_movies_names = []
+    orig_movies_names = list()
     for f in orig_file_names:
         if not f in series_files:
             orig_movies_names.append(f)
